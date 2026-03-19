@@ -15,16 +15,19 @@ class TradeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def active_trades(self, request):
-        trades = Trade.objects.filter(trader=request.user, status='active')
+        trades = Trade.objects.filter(
+            trader=request.user,
+            status__in=['pending', 'confirmed', 'on_hold'],
+        )
         serializer = self.get_serializer(trades, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def close_trade(self, request, pk=None):
         trade = self.get_object()
-        trade.status = 'closed'
+        trade.status = 'cancelled'
         trade.save()
-        return Response({'status': 'trade closed'})
+        return Response({'status': 'trade cancelled'})
 
 
 class TradePositionViewSet(viewsets.ModelViewSet):

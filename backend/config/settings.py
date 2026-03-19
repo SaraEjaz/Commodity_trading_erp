@@ -1,14 +1,19 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import urlparse
+
+from decouple import AutoConfig
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-test-key-change-in-production')
+config = AutoConfig(search_path=BASE_DIR.parent)
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-test-key-change-in-production')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+DEBUG = config('DEBUG', default='True') == 'True'
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -63,16 +68,50 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
+DATABASES = {'default': {}}
+
+db_host = config('DB_HOST', default=None)
+db_name = config('DB_NAME', default=None)
+db_user = config('DB_USER', default=None)
+db_password = config('DB_PASSWORD', default=None)
+db_port = config('DB_PORT', default=None)
+
+# Prefer explicit DB_* settings (matches docker-compose defaults).
+if any([db_host, db_name, db_user, db_password, db_port]):
+    # If you're running Django directly on your machine (not via docker-compose),
+    # the hostname "db" won't resolve. In that case, fall back to localhost.
+    if (db_host or '').strip().lower() == 'db' and config('RUNNING_IN_DOCKER', default='False') != 'True':
+        db_host = 'db'
+
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'erp_db'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'NAME': db_name or 'erp_db',
+        'USER': db_user or 'postgres',
+        'PASSWORD': db_password or 'postgres',
+        'HOST': db_host or 'db',
+        'PORT': db_port or '5432',
     }
-}
+else:
+    database_url = config('DATABASE_URL', default=None)
+    if database_url:
+        parsed = urlparse(database_url)
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed.path.lstrip('/'),
+            'USER': parsed.username or '',
+            'PASSWORD': parsed.password or '',
+            'HOST': parsed.hostname or 'db',
+            'PORT': str(parsed.port or 5432),
+        }
+    else:
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'erp_db',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': 'db',
+            'PORT': '5432',
+        }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -92,6 +131,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom user model
+AUTH_USER_MODEL = 'users.User'
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
@@ -129,9 +171,9 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000'
+    default='http://localhost:3000,http://127.0.0.1:3000',
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
 

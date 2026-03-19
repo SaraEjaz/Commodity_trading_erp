@@ -15,3 +15,19 @@ next.user-config.*
 node_modules/
 .next/
 .DS_Store
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+*.sqlite3
+
+# Virtual environments
+venv/
+.venv/
+backend/venv/
+
+# Django collectstatic / uploads
+staticfiles/
+media/

@@ -11,7 +11,7 @@ http://localhost:8000/api/
 ## Authentication
 
 ### Login
-**POST** `/auth/login/`
+**POST** `/auth/token/` (alias: `/auth/login/`)
 ```json
 {
   "email": "user@example.com",
@@ -28,7 +28,7 @@ http://localhost:8000/api/
 ```
 
 ### Register
-**POST** `/auth/register/`
+**POST** `/users/` (alias: `/auth/register/`)
 ```json
 {
   "first_name": "John",
@@ -39,7 +39,7 @@ http://localhost:8000/api/
 ```
 
 ### Refresh Token
-**POST** `/auth/refresh/`
+**POST** `/auth/token/refresh/` (alias: `/auth/refresh/`)
 ```json
 {
   "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."

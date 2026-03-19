@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import TradingTable from '@/components/trading/TradingTable';
 import TradingModal from '@/components/trading/TradingModal';
-import { tradingAPI } from '@/lib/api/trading';
+// import { tradingAPI } from '@/lib/api/trading';
 
 export default function TradingPage() {
   const [searchTerm, setSearchTerm] = useState('');

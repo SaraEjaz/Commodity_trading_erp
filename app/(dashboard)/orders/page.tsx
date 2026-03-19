@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import OrdersTable from '@/components/orders/OrdersTable';
 import OrderModal from '@/components/orders/OrderModal';
-import { ordersAPI } from '@/lib/api/orders';
+// import { ordersAPI } from '@/lib/api/orders';
 
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');

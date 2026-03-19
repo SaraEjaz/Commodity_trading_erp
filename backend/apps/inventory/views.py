@@ -16,17 +16,21 @@ class StockViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def low_stock(self, request):
         threshold = request.query_params.get('threshold', 100)
-        stocks = Stock.objects.filter(quantity__lt=threshold)
+        stocks = Stock.objects.filter(quantity_available__lt=threshold)
         serializer = self.get_serializer(stocks, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def statistics(self, request):
         stocks = Stock.objects.all()
+        total_value = sum(
+            (getattr(s, 'valuation', None).total_value if getattr(s, 'valuation', None) else 0)
+            for s in stocks
+        )
         stats = {
             'total_items': stocks.count(),
-            'total_value': sum(s.quantity * s.unit_cost for s in stocks),
-            'low_stock_items': stocks.filter(quantity__lt=100).count(),
+            'total_value': total_value,
+            'low_stock_items': stocks.filter(quantity_available__lt=100).count(),
         }
         return Response(stats)
 

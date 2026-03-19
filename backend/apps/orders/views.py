@@ -22,9 +22,9 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm_order(self, request, pk=None):
         order = self.get_object()
-        order.status = 'confirmed'
+        order.status = 'approved'
         order.save()
-        return Response({'status': 'order confirmed'})
+        return Response({'status': 'order approved'})
 
     @action(detail=True, methods=['post'])
     def cancel_order(self, request, pk=None):

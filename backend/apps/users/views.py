@@ -15,6 +15,11 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permission() for permission in self.permission_classes]
+    
     def get_serializer_class(self):
         if self.action == 'create':
             return UserRegistrationSerializer
@@ -43,15 +48,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Password changed successfully.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
-    def create(self, request):
-        """User registration endpoint"""
-        if request.method == 'POST':
-            serializer = UserRegistrationSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        output = UserSerializer(user, context=self.get_serializer_context())
+        return Response(output.data, status=status.HTTP_201_CREATED)
 
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):

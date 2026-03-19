@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import authAPI from '@/lib/api/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -39,11 +40,22 @@ export default function RegisterPage() {
         return;
       }
 
-      // In a real app, call the registration API
+      await authAPI.register({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password,
+        password_confirm: formData.password_confirm,
+      });
+
       toast.success('Registration successful! Please login.');
       router.push('/login');
     } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      const message =
+        (error as any)?.response?.data?.detail ||
+        (error as any)?.response?.data?.email?.[0] ||
+        'Registration failed. Please try again.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
