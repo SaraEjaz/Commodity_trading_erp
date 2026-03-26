@@ -15,6 +15,7 @@ interface AuthState {
   access_token: string | null;
   refresh_token: string | null;
   is_authenticated: boolean;
+  is_hydrated: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -24,6 +25,7 @@ const initialState: AuthState = {
   access_token: null,
   refresh_token: null,
   is_authenticated: false,
+  is_hydrated: false,
   loading: false,
   error: null,
 };
@@ -40,6 +42,7 @@ const authSlice = createSlice({
     setTokens(state, action: PayloadAction<{ access: string; refresh: string }>) {
       state.access_token = action.payload.access;
       state.refresh_token = action.payload.refresh;
+      state.is_authenticated = true;
       try {
         const decoded: any = jwtDecode(action.payload.access);
         state.user = decoded;
@@ -76,6 +79,7 @@ const authSlice = createSlice({
           console.error('Invalid stored token:', err);
         }
       }
+      state.is_hydrated = true;
     },
   },
 });

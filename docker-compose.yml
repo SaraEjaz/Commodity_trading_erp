@@ -1,4 +1,4 @@
-version: '3.9'
+
 
 services:
   db:
@@ -17,6 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   backend:
     build:
@@ -86,3 +87,4 @@ volumes:
 networks:
   default:
     name: erp_network
+    external: true

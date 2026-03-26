@@ -1,0 +1,49 @@
+﻿                      List of relations
+ Schema |               Name               | Type  |  Owner   
+--------+----------------------------------+-------+----------
+ public | auth_group                       | table | postgres
+ public | auth_group_permissions           | table | postgres
+ public | auth_permission                  | table | postgres
+ public | commodities_category             | table | postgres
+ public | commodities_commodity            | table | postgres
+ public | commodities_pricehistory         | table | postgres
+ public | commodities_supplier             | table | postgres
+ public | commodities_suppliercommodity    | table | postgres
+ public | django_admin_log                 | table | postgres
+ public | django_content_type              | table | postgres
+ public | django_migrations                | table | postgres
+ public | django_session                   | table | postgres
+ public | inventory_inventorylocation      | table | postgres
+ public | inventory_inventoryvaluation     | table | postgres
+ public | inventory_stock                  | table | postgres
+ public | inventory_stockadjustment        | table | postgres
+ public | inventory_stockmovement          | table | postgres
+ public | inventory_warehouse              | table | postgres
+ public | orders_order                     | table | postgres
+ public | orders_orderhistory              | table | postgres
+ public | orders_orderitem                 | table | postgres
+ public | orders_shipment                  | table | postgres
+ public | reports_financialreport          | table | postgres
+ public | reports_inventoryreport          | table | postgres
+ public | reports_report                   | table | postgres
+ public | reports_reportdata               | table | postgres
+ public | reports_salesreport              | table | postgres
+ public | reports_tradingreport            | table | postgres
+ public | settlements_bankaccount          | table | postgres
+ public | settlements_payment              | table | postgres
+ public | settlements_settlement           | table | postgres
+ public | settlements_settlementallocation | table | postgres
+ public | settlements_settlementhistory    | table | postgres
+ public | token_blacklist_blacklistedtoken | table | postgres
+ public | token_blacklist_outstandingtoken | table | postgres
+ public | trading_trade                    | table | postgres
+ public | trading_tradealert               | table | postgres
+ public | trading_tradeposition            | table | postgres
+ public | trading_tradesession             | table | postgres
+ public | users_auditlog                   | table | postgres
+ public | users_user                       | table | postgres
+ public | users_user_groups                | table | postgres
+ public | users_user_user_permissions      | table | postgres
+ public | users_userprofile                | table | postgres
+(44 rows)
+

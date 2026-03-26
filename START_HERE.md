@@ -198,7 +198,7 @@ Every route has been tested and is working:
 / ................................. Landing page
 /login .............................. Login
 /register ........................... Registration
-/dashboard/dashboard ............... Main dashboard
+/dashboard ............... Main dashboard
 /dashboard/commodities ............. Commodity management
 /dashboard/trading ................. Trading operations
 /dashboard/orders .................. Order management

@@ -13,7 +13,10 @@ SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-test-key-chang
 
 DEBUG = config('DEBUG', default='True') == 'True'
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,0.0.0.0'
+).split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,12 +25,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
-    
+
     'apps.users',
     'apps.commodities',
     'apps.trading',
@@ -70,48 +74,50 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {'default': {}}
 
-db_host = config('DB_HOST', default=None)
-db_name = config('DB_NAME', default=None)
-db_user = config('DB_USER', default=None)
-db_password = config('DB_PASSWORD', default=None)
-db_port = config('DB_PORT', default=None)
+# Database configuration logic
+use_sqlite = config('USE_SQLITE', default='False') == 'True'
+running_in_docker = config('RUNNING_IN_DOCKER', default='False') == 'True'
 
-# Prefer explicit DB_* settings (matches docker-compose defaults).
-if any([db_host, db_name, db_user, db_password, db_port]):
-    # If you're running Django directly on your machine (not via docker-compose),
-    # the hostname "db" won't resolve. In that case, fall back to localhost.
-    if (db_host or '').strip().lower() == 'db' and config('RUNNING_IN_DOCKER', default='False') != 'True':
-        db_host = 'db'
+if not use_sqlite:
+    db_host = config('DB_HOST', default=None)
+    db_name = config('DB_NAME', default=None)
+    db_user = config('DB_USER', default=None)
+    db_password = config('DB_PASSWORD', default=None)
+    db_port = config('DB_PORT', default=None)
 
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': db_name or 'erp_db',
-        'USER': db_user or 'postgres',
-        'PASSWORD': db_password or 'postgres',
-        'HOST': db_host or 'db',
-        'PORT': db_port or '5432',
-    }
-else:
-    database_url = config('DATABASE_URL', default=None)
-    if database_url:
-        parsed = urlparse(database_url)
+    # Prefer explicit DB_* settings (matches docker-compose defaults).
+    if any([db_host, db_name, db_user, db_password, db_port]):
+        # If DB_HOST is blank, choose sensible default based on environment.
+        if not (db_host or '').strip():
+            db_host = 'db' if running_in_docker else 'localhost'
+
         DATABASES['default'] = {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': parsed.path.lstrip('/'),
-            'USER': parsed.username or '',
-            'PASSWORD': parsed.password or '',
-            'HOST': parsed.hostname or 'db',
-            'PORT': str(parsed.port or 5432),
+            'NAME': db_name or 'erp_db',
+            'USER': db_user or 'postgres',
+            'PASSWORD': db_password or 'postgres',
+            'HOST': db_host,
+            'PORT': db_port or '5432',
         }
     else:
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'erp_db',
-            'USER': 'postgres',
-            'PASSWORD': 'postgres',
-            'HOST': 'db',
-            'PORT': '5432',
-        }
+        database_url = config('DATABASE_URL', default=None)
+        if database_url:
+            parsed = urlparse(database_url)
+            DATABASES['default'] = {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed.path.lstrip('/'),
+                'USER': parsed.username or '',
+                'PASSWORD': parsed.password or '',
+                'HOST': parsed.hostname or ('db' if running_in_docker else 'localhost'),
+                'PORT': str(parsed.port or 5432),
+            }
+
+# Fallback to SQLite if Postgres is not configured
+if not DATABASES.get('default'):
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -127,6 +133,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -152,12 +159,12 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/hour',
-        'user': '1000/hour'
-    }
+        'user': '1000/hour',
+    },
 }
 
 # JWT Configuration
@@ -175,6 +182,7 @@ CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:3000,http://127.0.0.1:3000',
 ).split(',')
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Logging

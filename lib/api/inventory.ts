@@ -2,12 +2,13 @@ import apiClient from './client';
 
 export const inventoryAPI = {
   async list(params?: { search?: string; limit?: number; offset?: number; warehouse?: string }) {
-    const { data } = await apiClient.get('/api/inventory/', { params });
-    return data.results || data;
+    // ✅ Removed /api/ prefix (client baseURL already includes /api)
+    const { data } = await apiClient.get('/inventory/', { params });
+    return Array.isArray(data) ? data : (data.results || []);
   },
 
   async get(id: string | number) {
-    const { data } = await apiClient.get(`/api/inventory/${id}/`);
+    const { data } = await apiClient.get(`/inventory/${id}/`); // ✅ Fixed
     return data;
   },
 
@@ -20,21 +21,21 @@ export const inventoryAPI = {
     unit_price: number;
     location: string;
   }) {
-    const { data } = await apiClient.post('/api/inventory/', payload);
+    const { data } = await apiClient.post('/inventory/', payload); // ✅ Fixed
     return data;
   },
 
   async update(id: string | number, payload: any) {
-    const { data } = await apiClient.put(`/api/inventory/${id}/`, payload);
+    const { data } = await apiClient.put(`/inventory/${id}/`, payload); // ✅ Fixed
     return data;
   },
 
   async delete(id: string | number) {
-    await apiClient.delete(`/api/inventory/${id}/`);
+    await apiClient.delete(`/inventory/${id}/`); // ✅ Fixed
   },
 
   async adjustStock(id: string | number, quantity: number, reason: string) {
-    const { data } = await apiClient.post(`/api/inventory/${id}/adjust-stock/`, {
+    const { data } = await apiClient.post(`/inventory/${id}/adjust-stock/`, { // ✅ Fixed
       quantity,
       reason,
     });
@@ -42,7 +43,7 @@ export const inventoryAPI = {
   },
 
   async getLowStockItems() {
-    const { data } = await apiClient.get('/api/inventory/low-stock/');
+    const { data } = await apiClient.get('/inventory/low-stock/'); // ✅ Fixed
     return data;
   },
 };

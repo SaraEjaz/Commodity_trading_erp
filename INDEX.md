@@ -147,7 +147,7 @@ Dockerfile.frontend # Frontend container
 | `/` | Landing Page | ✅ |
 | `/login` | Login | ✅ |
 | `/register` | Registration | ✅ |
-| `/dashboard/dashboard` | Dashboard | ✅ |
+| `/dashboard` | Dashboard | ✅ |
 | `/dashboard/commodities` | Commodities | ✅ |
 | `/dashboard/trading` | Trading | ✅ |
 | `/dashboard/orders` | Orders | ✅ |

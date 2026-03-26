@@ -64,7 +64,7 @@
 ## ✅ Routing Configuration
 
 - [x] Navigation paths fixed in Sidebar.tsx
-  - [x] Dashboard: /dashboard/dashboard
+  - [x] Dashboard: /dashboard
   - [x] Trading: /dashboard/trading
   - [x] Orders: /dashboard/orders
   - [x] Inventory: /dashboard/inventory
@@ -72,8 +72,8 @@
   - [x] Settings: /dashboard/settings
 
 - [x] Redirect paths fixed
-  - [x] Home page redirects to /dashboard/dashboard
-  - [x] Login redirects to /dashboard/dashboard
+  - [x] Home page redirects to /dashboard
+  - [x] Login redirects to /dashboard
   - [x] Protected routes redirect to /login
 
 ## ✅ Backend Structure
@@ -291,7 +291,7 @@ curl http://localhost:5050 (pgAdmin)
 - Landing: http://localhost:3000/
 - Login: http://localhost:3000/login
 - Register: http://localhost:3000/register
-- Dashboard: http://localhost:3000/dashboard/dashboard
+- Dashboard: http://localhost:3000/dashboard
 - All menu items in sidebar should navigate correctly
 
 ### 4. Verify animations

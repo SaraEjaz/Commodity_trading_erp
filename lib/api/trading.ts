@@ -16,6 +16,7 @@ export interface Trade {
   counterparty_name: string;
   counterparty_country: string;
   notes: string;
+  profit_loss?: number; // ✅ Added missing field used in TradingPage stats
 }
 
 export interface TradePosition {
@@ -32,9 +33,17 @@ export interface TradePosition {
 }
 
 const tradingAPI = {
+  // ✅ Added missing `list` method (used by TradingPage)
+  list: async (params?: Record<string, any>) => {
+    const response = await client.get<Trade[]>('trading/trades/', { params });
+    const data = response.data as any;
+    return Array.isArray(data) ? data : (data.results || []);
+  },
+
   getTrades: async (params?: Record<string, any>) => {
     const response = await client.get<Trade[]>('trading/trades/', { params });
-    return response.data;
+    const data = response.data as any;
+    return Array.isArray(data) ? data : (data.results || []);
   },
 
   getTrade: async (id: number) => {
@@ -68,3 +77,4 @@ const tradingAPI = {
 };
 
 export default tradingAPI;
+export { tradingAPI }; // ✅ Named export for TradingPage

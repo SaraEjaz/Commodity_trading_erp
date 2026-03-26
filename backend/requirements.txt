@@ -3,7 +3,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.3.1
 django-filter==24.1
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9 # Required for PostgreSQL. May fail build on newer Python versions without pg_config.
 python-decouple==3.8
 gunicorn==21.2.0
 pillow==10.1.0

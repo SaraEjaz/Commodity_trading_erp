@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard/dashboard' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: TrendingUp, label: 'Trading', href: '/dashboard/trading' },
   { icon: ShoppingCart, label: 'Orders', href: '/dashboard/orders' },
   { icon: Package, label: 'Inventory', href: '/dashboard/inventory' },

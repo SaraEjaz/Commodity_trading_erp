@@ -43,7 +43,7 @@ export default function LoginPage() {
       localStorage.setItem('refresh_token', tokens.refresh);
       dispatch(setTokens(tokens));
       toast.success('Login successful!');
-      router.push('/dashboard/dashboard');
+      router.push('/dashboard');
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Login failed. Please try again.';
       toast.error(message);

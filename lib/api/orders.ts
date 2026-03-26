@@ -29,9 +29,17 @@ export interface Order {
 }
 
 const ordersAPI = {
+  // ✅ Added missing `list` method (used by OrdersPage)
+  list: async (params?: Record<string, any>) => {
+    const response = await client.get('orders/orders/', { params });
+    const data = response.data as any;
+    return Array.isArray(data) ? data : (data.results || []);
+  },
+
   getOrders: async (params?: Record<string, any>) => {
-    const response = await client.get<Order[]>('orders/orders/', { params });
-    return response.data;
+    const response = await client.get('orders/orders/', { params });
+    const data = response.data as any;
+    return Array.isArray(data) ? data : (data.results || []);
   },
 
   getOrder: async (id: number) => {
@@ -53,7 +61,6 @@ const ordersAPI = {
     await client.delete(`orders/orders/${id}/`);
   },
 
-  // Order Items
   getOrderItems: async (orderId: number) => {
     const response = await client.get<OrderItem[]>(`orders/orders/${orderId}/items/`);
     return response.data;
@@ -71,3 +78,4 @@ const ordersAPI = {
 };
 
 export default ordersAPI;
+export { ordersAPI };
