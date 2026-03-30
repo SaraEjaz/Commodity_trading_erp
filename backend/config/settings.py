@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     'django_filters',
 
     'apps.users',
+    'apps.masters',
+    'apps.commission',
     'apps.commodities',
     'apps.trading',
     'apps.orders',

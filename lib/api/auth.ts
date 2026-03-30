@@ -20,6 +20,14 @@ export interface AuthTokens {
   refresh: string;
 }
 
+export interface ModuleAccess {
+  id: number;
+  module: string;
+  module_display: string;
+  is_default: boolean;
+  is_active: boolean;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -31,11 +39,20 @@ export interface User {
   department: string;
   created_at: string;
   updated_at: string;
+  module_accesses: ModuleAccess[];
+  allowed_modules: string[];
+  default_module: string | null;
+}
+
+export interface LoginResponse {
+  access: string;
+  refresh: string;
+  user: User;
 }
 
 const authAPI = {
   login: async (credentials: LoginCredentials) => {
-    const response = await client.post<AuthTokens>('auth/token/', credentials);
+    const response = await client.post<LoginResponse>('auth/token/', credentials);
     return response.data;
   },
 

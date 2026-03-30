@@ -18,7 +18,85 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+class Role(models.Model):
+    """Role definition with optional module restrictions"""
+    ROLE_CHOICES = [
+        ('super_admin', 'Super Administrator'),
+        ('admin', 'Administrator'),
+        ('trading_manager', 'Trading Manager'),
+        ('trading_user', 'Trading User'),
+        ('commission_manager', 'Commission Manager'),
+        ('commission_user', 'Commission User'),
+        ('accounts_user', 'Accounts User'),
+        ('manager', 'General Manager'),
+        ('viewer', 'Viewer'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.get_name_display()}"
+
+
+class Permission(models.Model):
+    """Granular permissions for features and actions"""
+    CATEGORIES = [
+        ('view', 'View'),
+        ('create', 'Create'),
+        ('edit', 'Edit'),
+        ('delete', 'Delete'),
+        ('approve', 'Approve'),
+        ('admin', 'Admin Only'),
+    ]
+    
+    codename = models.CharField(max_length=100, unique=True)
+    category = models.CharField(max_length=20, choices=CATEGORIES)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['category', 'codename']
+        verbose_name_plural = 'Permissions'
+    
+    def __str__(self):
+        return self.codename
+
+
+class ModuleAccess(models.Model):
+    """Maps users to business line modules they can access"""
+    MODULE_CHOICES = [
+        ('trading', 'Trading (Warehouse Inventory)'),
+        ('commission', 'Commission (Back-to-Back)'),
+        ('admin', 'Admin Panel'),
+    ]
+    
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='module_accesses')
+    module = models.CharField(max_length=50, choices=MODULE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False, help_text="Default landing module after login")
+    granted_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, 
+                                   related_name='granted_module_accesses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'module']
+        ordering = ['module']
+    
+    def __str__(self):
+        return f"{self.user.email} → {self.get_module_display()}"
+
+
 class User(AbstractUser):
+    """Extended user model with role + module access"""
+    # Keep ROLE_CHOICES for backward compatibility, but use Role model for definitions
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
         ('trader', 'Trader'),
@@ -50,6 +128,26 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
+    
+    def get_allowed_modules(self):
+        """Get list of modules user can access"""
+        modules = self.module_accesses.filter(is_active=True).values_list('module', flat=True)
+        return list(modules)
+    
+    def has_module_access(self, module):
+        """Check if user can access a specific module"""
+        return self.module_accesses.filter(module=module, is_active=True).exists()
+    
+    def get_default_module(self):
+        """Get user's default landing module"""
+        default = self.module_accesses.filter(is_default=True, is_active=True).first()
+        if default:
+            return default.module
+        # Fallback to first active module
+        first_module = self.module_accesses.filter(is_active=True).first()
+        if first_module:
+            return first_module.module
+        return None
 
 
 class UserProfile(models.Model):

@@ -1,8 +1,74 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import UserProfile, AuditLog
+from .models import UserProfile, AuditLog, Role, Permission, ModuleAccess
 
 User = get_user_model()
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['id', 'name', 'description', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ['id', 'codename', 'category', 'description', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+
+
+class ModuleAccessSerializer(serializers.ModelSerializer):
+    module_display = serializers.CharField(source='get_module_display', read_only=True)
+    granted_by_email = serializers.CharField(source='granted_by.email', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = ModuleAccess
+        fields = [
+            'id', 'user', 'module', 'module_display', 'is_active', 'is_default',
+            'granted_by', 'granted_by_email', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['avatar', 'bio', 'preferences', 'last_login_ip', 'created_at', 'updated_at']
+
+
+class UserModuleAccessDetailSerializer(serializers.ModelSerializer):
+    """Nested serializer for module access in user response"""
+    module_display = serializers.CharField(source='get_module_display', read_only=True)
+    
+    class Meta:
+        model = ModuleAccess
+        fields = ['id', 'module', 'module_display', 'is_default', 'is_active']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=True)
+    module_accesses = UserModuleAccessDetailSerializer(many=True, read_only=True)
+    allowed_modules = serializers.SerializerMethodField()
+    default_module = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'phone', 'role', 
+            'department', 'is_active', 'profile', 'module_accesses', 
+            'allowed_modules', 'default_module', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'module_accesses', 'allowed_modules', 'default_module']
+    
+    def get_allowed_modules(self, obj):
+        """Get list of modules user can access"""
+        return obj.get_allowed_modules()
+    
+    def get_default_module(self, obj):
+        """Get user's default module"""
+        return obj.get_default_module()
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -22,24 +88,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         UserProfile.objects.create(user=user)
         return user
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = ['avatar', 'bio', 'preferences', 'last_login_ip', 'created_at', 'updated_at']
-
-
-class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=True)
-    
-    class Meta:
-        model = User
-        fields = [
-            'id', 'email', 'first_name', 'last_name', 'phone', 'role', 
-            'department', 'is_active', 'profile', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

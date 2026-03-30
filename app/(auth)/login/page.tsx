@@ -38,12 +38,26 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const tokens = await authAPI.login(data as LoginCredentials);
-      localStorage.setItem('access_token', tokens.access);
-      localStorage.setItem('refresh_token', tokens.refresh);
-      dispatch(setTokens(tokens));
+      const response = await authAPI.login(data as LoginCredentials);
+      localStorage.setItem('access_token', response.access);
+      localStorage.setItem('refresh_token', response.refresh);
+      
+      // Dispatch with full response including user data
+      dispatch(setTokens({
+        access: response.access,
+        refresh: response.refresh,
+        user: response.user,
+      }));
+      
       toast.success('Login successful!');
-      router.push('/dashboard');
+      
+      // Redirect to dashboard or module-specific page
+      const defaultModule = response.user.default_module || response.user.allowed_modules?.[0];
+      if (defaultModule && defaultModule !== 'admin') {
+        router.push(`/dashboard/${defaultModule}`);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Login failed. Please try again.';
       toast.error(message);
