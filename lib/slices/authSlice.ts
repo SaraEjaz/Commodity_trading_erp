@@ -31,7 +31,7 @@ interface AuthState {
   is_hydrated: boolean;
   loading: boolean;
   error: string | null;
-  current_module: string | null; // Track current module
+  current_module: string | null;
 }
 
 const initialState: AuthState = {
@@ -53,27 +53,27 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.is_authenticated = true;
       state.error = null;
-      // Auto-set current module to default or first allowed
       if (action.payload.default_module) {
         state.current_module = action.payload.default_module;
       } else if (action.payload.allowed_modules && action.payload.allowed_modules.length > 0) {
         state.current_module = action.payload.allowed_modules[0];
       }
     },
+
     setTokens(state, action: PayloadAction<{ access: string; refresh: string; user?: User }>) {
       state.access_token = action.payload.access;
       state.refresh_token = action.payload.refresh;
       state.is_authenticated = true;
+      state.is_hydrated = true; // mark as hydrated when tokens are set from login
+
       if (action.payload.user) {
         state.user = action.payload.user;
-        // Set current module if available
         if (action.payload.user.default_module) {
           state.current_module = action.payload.user.default_module;
         } else if (action.payload.user.allowed_modules && action.payload.user.allowed_modules.length > 0) {
           state.current_module = action.payload.user.allowed_modules[0];
         }
       } else {
-        // Fallback to JWT decode if user not in payload
         try {
           const decoded: any = jwtDecode(action.payload.access);
           state.user = {
@@ -86,44 +86,69 @@ const authSlice = createSlice({
         }
       }
     },
+
     setCurrentModule(state, action: PayloadAction<string>) {
-      // Verify user has access to this module
       if (state.user?.allowed_modules?.includes(action.payload)) {
         state.current_module = action.payload;
       }
     },
+
     setLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
     },
+
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
     },
+
     logout(state) {
       state.user = null;
       state.access_token = null;
       state.refresh_token = null;
       state.is_authenticated = false;
+      state.is_hydrated = true; // keep hydrated so login page shows immediately
       state.error = null;
       state.current_module = null;
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      }
     },
+
     hydrate(state) {
+      if (typeof window === 'undefined') {
+        state.is_hydrated = true;
+        return;
+      }
       const access_token = localStorage.getItem('access_token');
       const refresh_token = localStorage.getItem('refresh_token');
+
       if (access_token && refresh_token) {
-        state.access_token = access_token;
-        state.refresh_token = refresh_token;
-        state.is_authenticated = true;
         try {
           const decoded: any = jwtDecode(access_token);
+          // Check token is not expired
+          const now = Date.now() / 1000;
+          if (decoded.exp && decoded.exp < now) {
+            // Token expired — clear it
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            state.is_hydrated = true;
+            return;
+          }
+          state.access_token = access_token;
+          state.refresh_token = refresh_token;
+          state.is_authenticated = true;
           state.user = {
             ...decoded,
             id: decoded.user_id || decoded.id,
+            allowed_modules: decoded.allowed_modules || [],
+            default_module: decoded.default_module || null,
           };
           state.current_module = decoded.default_module || (decoded.allowed_modules?.[0] || null);
         } catch (err) {
           console.error('Invalid stored token:', err);
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
         }
       }
       state.is_hydrated = true;
@@ -131,5 +156,14 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, setTokens, setCurrentModule, setLoading, setError, logout, hydrate } = authSlice.actions;
+export const {
+  setUser,
+  setTokens,
+  setCurrentModule,
+  setLoading,
+  setError,
+  logout,
+  hydrate,
+} = authSlice.actions;
+
 export default authSlice.reducer;

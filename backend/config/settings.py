@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
     'apps.users',
     'apps.masters',
+    'apps.accounting',
     'apps.commission',
     'apps.commodities',
     'apps.trading',

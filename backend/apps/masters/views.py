@@ -6,7 +6,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
 from .models import Party, Warehouse, BankAccount, CommissionRule
 from .serializers import PartySerializer, WarehouseSerializer, BankAccountSerializer, CommissionRuleSerializer
-from apps.users.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 
 
 class PartyViewSet(viewsets.ModelViewSet):

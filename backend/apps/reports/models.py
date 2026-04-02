@@ -88,7 +88,7 @@ class TradingReport(models.Model):
 
 
 class InventoryReport(models.Model):
-    warehouse = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True)
+    warehouse = models.ForeignKey('masters.Warehouse', on_delete=models.SET_NULL, null=True)
     report_date = models.DateField(auto_now_add=True)
     
     total_items = models.IntegerField(default=0)

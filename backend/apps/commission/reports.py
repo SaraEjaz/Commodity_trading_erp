@@ -12,7 +12,8 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import datetime, timedelta
 
-from apps.commission.models import CommissionDeal, CommissionLifting, CommissionLedgerEntry
+from apps.commission.models import CommissionDeal, CommissionLifting
+from apps.accounting.models import CommissionLedgerEntry
 from apps.masters.models import Party
 
 

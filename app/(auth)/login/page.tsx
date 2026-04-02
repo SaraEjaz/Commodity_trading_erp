@@ -30,6 +30,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -41,20 +42,26 @@ export default function LoginPage() {
       const response = await authAPI.login(data as LoginCredentials);
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
-      
-      // Dispatch with full response including user data
+
       dispatch(setTokens({
         access: response.access,
         refresh: response.refresh,
         user: response.user,
       }));
-      
+
       toast.success('Login successful!');
-      
-      // Redirect to dashboard or module-specific page
-      const defaultModule = response.user.default_module || response.user.allowed_modules?.[0];
+
+      // Redirect based on allowed modules
+      const allowedModules = response.user.allowed_modules ?? [];
+      const defaultModule = response.user.default_module;
+
       if (defaultModule && defaultModule !== 'admin') {
         router.push(`/dashboard/${defaultModule}`);
+      } else if (allowedModules.includes('trading')) {
+        router.push('/dashboard/trading');
+      } else if (allowedModules.includes('commission')) {
+        // Commission users go to /dashboard/commission
+        router.push('/dashboard/commission');
       } else {
         router.push('/dashboard');
       }
@@ -65,6 +72,12 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Quick fill for demo credentials
+  const fillCredentials = (email: string, password: string) => {
+    setValue('email', email);
+    setValue('password', password);
   };
 
   return (
@@ -113,19 +126,49 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-gray-600 mt-6">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="text-blue-600 hover:underline font-semibold">
               Register here
             </Link>
           </p>
 
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-gray-700">
-              <strong>Demo Credentials:</strong><br />
-              Email: admin@example.com<br />
-              Password: demopass123
-            </p>
+          {/* Demo Credentials */}
+          <div className="mt-6 space-y-3">
+            {/* Admin / Trading */}
+            <div
+              className="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200"
+              onClick={() => fillCredentials('admin1@admin.com', 'admin123')}
+            >
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">
+                🏭 Trading Module (Pulses)
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Email:</strong> admin1@admin.com
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Password:</strong> your password
+              </p>
+              <p className="text-xs text-blue-500 mt-1">Click to auto-fill</p>
+            </div>
+
+            {/* Commission */}
+            <div
+              className="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors border border-green-200"
+              onClick={() => fillCredentials('commission@test.com', 'Test1234!')}
+            >
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">
+                🤝 Commission Module (Meals)
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Email:</strong> commission@test.com
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Password:</strong> Test1234!
+              </p>
+              <p className="text-xs text-green-500 mt-1">Click to auto-fill</p>
+            </div>
           </div>
+
         </div>
       </Card>
     </div>

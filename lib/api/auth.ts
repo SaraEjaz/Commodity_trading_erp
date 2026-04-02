@@ -13,6 +13,7 @@ export interface SignupData {
   last_name: string;
   phone?: string;
   role?: string;
+  module?: 'trading' | 'commission'; // ← added so register page doesn't show red
 }
 
 export interface AuthTokens {

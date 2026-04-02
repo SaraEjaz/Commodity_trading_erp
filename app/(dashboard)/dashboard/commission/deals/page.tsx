@@ -63,12 +63,10 @@ export default function CommissionDealsPage() {
       router.push('/login');
       return;
     }
-
     if (!hasAccess) {
       router.push('/dashboard');
       return;
     }
-
     fetchDeals();
   }, [isAuthenticated, hasAccess]);
 
@@ -76,13 +74,8 @@ export default function CommissionDealsPage() {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
-
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
 
       const response = await apiClient.get(`/commission/deals/?${params}`);
       setDeals(response.data.results || response.data);
@@ -102,10 +95,7 @@ export default function CommissionDealsPage() {
   };
 
   const handleDeleteDeal = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this deal?')) {
-      return;
-    }
-
+    if (!confirm('Are you sure you want to delete this deal?')) return;
     try {
       await apiClient.delete(`/commission/deals/${id}/`);
       fetchDeals();
@@ -138,11 +128,11 @@ export default function CommissionDealsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Commission Deals</h1>
-          <p className="text-gray-500">Manage commission trading deals</p>
+          <p className="text-gray-500">Manage commission trading deals (Meals / Back-to-Back)</p>
         </div>
         <Button onClick={handleCreateNew} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -153,43 +143,54 @@ export default function CommissionDealsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Deals</CardTitle>
-          <CardDescription>Commission deals with tracking details</CardDescription>
+          <CardDescription>Commission deals with lifting and settlement tracking</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 mb-6">
-            <div className="flex gap-4">
-              <Input
-                placeholder="Search by ID or party..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyUp={() => fetchDeals()}
-                className="flex-1"
-              />
-              <Select value={statusFilter} onValueChange={(value) => {
+          {/* Filters */}
+          <div className="flex gap-4 mb-6">
+            <Input
+              placeholder="Search by Deal ID or party..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyUp={fetchDeals}
+              className="flex-1"
+            />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
                 setStatusFilter(value);
-              }}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="partially_executed">Partially Executed</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={fetchDeals} variant="outline">
-                Search
-              </Button>
-            </div>
+                fetchDeals();
+              }}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="partially_executed">Partially Executed</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={fetchDeals} variant="outline">
+              Search
+            </Button>
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto">
             {deals.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No deals found</p>
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg mb-2">No deals found</p>
+                <p className="text-gray-400 text-sm">
+                  Create your first commission deal to get started
+                </p>
+                <Button onClick={handleCreateNew} className="mt-4 gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Deal
+                </Button>
               </div>
             ) : (
               <Table>
@@ -214,21 +215,27 @@ export default function CommissionDealsPage() {
                       <TableCell>{deal.commodity_name || '-'}</TableCell>
                       <TableCell>{deal.seller_name || '-'}</TableCell>
                       <TableCell>{deal.principal_buyer_name || '-'}</TableCell>
-                      <TableCell className="text-right">{deal.total_quantity_mt.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{deal.quantity_lifted_mt.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{deal.quantity_remaining_mt.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <span className="text-sm">
-                          {(deal.total_buyer_commission + deal.total_seller_commission).toFixed(2)}
-                        </span>
+                        {deal.total_quantity_mt.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {deal.quantity_lifted_mt.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {deal.quantity_remaining_mt.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {(
+                          deal.total_buyer_commission + deal.total_seller_commission
+                        ).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(deal.status)}>
-                          {deal.status}
+                          {deal.status.replace('_', ' ')}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <Button
                             size="sm"
                             variant="ghost"

@@ -1,25 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from apps.masters.models import Warehouse
 
 User = get_user_model()
-
-
-class Warehouse(models.Model):
-    name = models.CharField(max_length=100)
-    location = models.CharField(max_length=200)
-    address = models.TextField()
-    capacity = models.DecimalField(max_digits=15, decimal_places=2, help_text="Capacity in default unit")
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_warehouses')
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['name']
-    
-    def __str__(self):
-        return self.name
 
 
 class InventoryLocation(models.Model):

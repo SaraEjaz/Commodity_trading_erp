@@ -1,22 +1,7 @@
 from rest_framework import serializers
 
-from .models import Warehouse, InventoryLocation, Stock, StockMovement
-
-
-class WarehouseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Warehouse
-        fields = [
-            'id',
-            'name',
-            'location',
-            'address',
-            'capacity',
-            'manager',
-            'is_active',
-            'created_at',
-            'updated_at',
-        ]
+from .models import InventoryLocation, Stock, StockMovement
+from apps.masters.serializers import WarehouseSerializer
 
 
 class InventoryLocationSerializer(serializers.ModelSerializer):
