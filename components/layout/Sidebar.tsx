@@ -28,13 +28,16 @@ import {
 
 const ALL_MENU_ITEMS = [
   // Always visible
-  { module: null, icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  //{ module: null, icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
 
   // COMMISSION MODULE (Meals)
-  { module: 'commission', section: 'Commission (Meals)', icon: Handshake, label: 'Commission Deals', href: '/dashboard/commission' },
+  { module: 'commission', section: 'Commission', icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard/commission' },
+  { module: 'commission', icon: Handshake, label: 'Commission Deals', href: '/dashboard/commission/deals' },
   { module: 'commission', icon: ClipboardList, label: 'Liftings', href: '/dashboard/commission/liftings' },
   { module: 'commission', icon: DollarSign, label: 'Commission Reports', href: '/dashboard/commission/reports' },
+  { module: 'commission', icon: Settings, label: 'Settings', href: '/dashboard/commission/settings' },
 
+  
   // TRADING MODULE (Pulses)
   { module: 'trading', section: 'Trading (Pulses)', icon: TrendingUp, label: 'Trading', href: '/dashboard/trading' },
   { module: 'trading', icon: Warehouse, label: 'Lots & Purchases', href: '/dashboard/trading/lots' },
@@ -47,7 +50,7 @@ const ALL_MENU_ITEMS = [
   { module: 'masters', icon: BookOpen, label: 'Masters', href: '/dashboard/masters' },
 
   // Always visible
-  { module: null, icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+  //{ module: null, icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];
 
 export default function Sidebar() {

@@ -40,6 +40,9 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await authAPI.login(data as LoginCredentials);
+
+      
+
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
 
@@ -55,16 +58,33 @@ export default function LoginPage() {
       const allowedModules = response.user.allowed_modules ?? [];
       const defaultModule = response.user.default_module;
 
-      if (defaultModule && defaultModule !== 'admin') {
-        router.push(`/dashboard/${defaultModule}`);
-      } else if (allowedModules.includes('trading')) {
-        router.push('/dashboard/trading');
-      } else if (allowedModules.includes('commission')) {
-        // Commission users go to /dashboard/commission
-        router.push('/dashboard/commission');
-      } else {
-        router.push('/dashboard');
-      }
+    // Prefer explicit default module first
+    if (defaultModule === 'commission') {
+      router.push('/dashboard/commission');
+    } else if (defaultModule === 'trading') {
+      router.push('/dashboard/trading');
+    } else if (defaultModule && defaultModule !== 'admin') {
+      router.push(`/dashboard/${defaultModule}`);
+    } else if (allowedModules.includes('commission')) {
+      router.push('/dashboard/commission');
+    } else if (allowedModules.includes('trading')) {
+      router.push('/dashboard/trading');
+    } else {
+      router.push('/dashboard');
+    }
+      // const allowedModules = response.user.allowed_modules ?? [];
+      // const defaultModule = response.user.default_module;
+
+      // if (defaultModule && defaultModule !== 'admin') {
+      //   router.push(`/dashboard/${defaultModule}`);
+      // } else if (allowedModules.includes('trading')) {
+      //   router.push('/dashboard/trading');
+      // } else if (allowedModules.includes('commission')) {
+      //   // Commission users go to /dashboard/commission
+      //   router.push('/dashboard/commission/');
+      // } else {
+      //   router.push('/dashboard');
+      // }
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Login failed. Please try again.';
       toast.error(message);
