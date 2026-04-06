@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getCommissionDeal } from '@/lib/api/commission';
+import { getDealSheet, getCommissionDeal } from '@/lib/api/commission';
 import { CommissionDealDetail } from '@/lib/types/commission';
 
 export default function CommissionDealDetailPage() {
@@ -16,7 +16,14 @@ export default function CommissionDealDetailPage() {
   useEffect(() => {
     const loadDeal = async () => {
       try {
-        const data = await getCommissionDeal(params.id);
+        // Prefer server-side computed deal sheet when available
+        let data = null;
+        try {
+          data = await getDealSheet(params.id);
+        } catch (e) {
+          // fallback to basic deal endpoint
+          data = await getCommissionDeal(params.id);
+        }
         setDeal(data);
       } catch (error) {
         console.error(error);

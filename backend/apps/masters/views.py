@@ -5,7 +5,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
 from .models import Party, Warehouse, BankAccount, CommissionRule
-from .serializers import PartySerializer, WarehouseSerializer, BankAccountSerializer, CommissionRuleSerializer
+from .models import UnitOfMeasure
+from .serializers import PartySerializer, WarehouseSerializer, BankAccountSerializer, CommissionRuleSerializer, UnitOfMeasureSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -164,3 +165,15 @@ class CommissionRuleViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(rules, many=True)
         return Response(serializer.data)
+
+
+class UnitOfMeasureViewSet(viewsets.ModelViewSet):
+    """CRUD for UOF / Units of Measure"""
+    queryset = UnitOfMeasure.objects.all()
+    serializer_class = UnitOfMeasureSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['code', 'name']
+    ordering_fields = ['code', 'name']
+    ordering = ['code']
+

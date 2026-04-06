@@ -23,7 +23,10 @@ class CommissionDeal(models.Model):
     # Commodity & Quantity
     commodity = models.ForeignKey('commodities.Commodity', on_delete=models.PROTECT)
     total_quantity_mt = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)])
-    unit = models.CharField(max_length=10, default='MT')
+    # UOF reference (master) — default MT will be set via seed/migration
+    uof = models.ForeignKey('masters.UnitOfMeasure', on_delete=models.PROTECT, null=True, blank=True)
+    # Total amount = commercial_rate * total_quantity_mt (stored for reporting)
+    total_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     
     # Delivery period
     delivery_period_from = models.DateField()
@@ -34,11 +37,9 @@ class CommissionDeal(models.Model):
     
     # Seller details
     seller_party = models.ForeignKey('masters.Party', on_delete=models.PROTECT, related_name='sold_commission_deals')
-    seller_rate_per_mt = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     
     # Principal buyer details
     principal_buyer_party = models.ForeignKey('masters.Party', on_delete=models.PROTECT, related_name='bought_commission_deals')
-    buyer_rate_per_mt = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     
     # Commission settings
     commission_applicable = models.BooleanField(default=True)

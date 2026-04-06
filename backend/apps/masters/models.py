@@ -192,3 +192,20 @@ class CommissionRule(models.Model):
         from datetime import date
         today = date.today()
         return self.valid_from <= today and (self.valid_to is None or today <= self.valid_to)
+
+
+class UnitOfMeasure(models.Model):
+    """Unit Of Measure / UOF master (e.g., MT)"""
+    code = models.CharField(max_length=20, unique=True, db_index=True)
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['code']
+        indexes = [models.Index(fields=['code']), models.Index(fields=['is_active'])]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"

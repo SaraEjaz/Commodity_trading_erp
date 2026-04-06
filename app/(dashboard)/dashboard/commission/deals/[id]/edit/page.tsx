@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import DealForm from '@/components/commission/deals/DealForm';
+import DealScreen from '../../_components/DealScreen';
 import { getCommissionDeal } from '@/lib/api/commission';
 import { CommissionDealDetail } from '@/lib/types/commission';
 
@@ -29,5 +29,5 @@ export default function EditCommissionDealPage() {
   if (isLoading) return <div className="p-6">Loading deal...</div>;
   if (!deal) return <div className="p-6">Deal not found.</div>;
 
-  return <DealForm mode="edit" initialData={deal} />;
+  return <DealScreen mode="edit" initialData={deal} />;
 }

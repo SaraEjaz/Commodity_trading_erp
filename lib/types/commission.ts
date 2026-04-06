@@ -1,74 +1,204 @@
-export interface CommissionDealReceiverRow {
-  id?: number;
-  receiver_party_id: number | null;
-  invoice_party_id: number | null;
-  payment_responsibility_party_id: number | null;
-  expected_quantity_mt: string;
-  lifted_quantity_mt?: string;
-  remaining_quantity_mt?: string;
-  remarks?: string;
-  receiver_party_name?: string;
-  invoice_party_name?: string;
-  payment_responsibility_party_name?: string;
-}
+import apiClient from '@/lib/api/client';
+import { CommissionDealFormData } from '@/lib/types/commission';
 
-export interface CommissionLiftingMini {
-  id: number;
-  lifting_id: string;
-  lifting_date: string;
-  vehicle_no: string;
-  quantity_mt: string;
-  principal_buyer_name?: string;
-  invoice_party_name?: string;
-  receiver_party_name?: string;
-  payment_party_name?: string;
-  buyer_commission: string;
-  seller_commission: string;
-  payment_status: string;
-  posting_reference: string;
-  notes?: string;
-}
+const toNumber = (value: unknown, fallback = 0): number => {
+  const num = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
 
-export interface CommissionDealFormData {
-  deal_id?: string;
-  deal_date: string;
-  delivery_period_from: string;
-  delivery_period_to: string;
+const normalizeDeal = (deal: any) => ({
+  ...deal,
+  total_quantity_mt: toNumber(deal.total_quantity_mt),
+  quantity_lifted_mt: toNumber(deal.quantity_lifted_mt),
+  quantity_remaining_mt: toNumber(deal.quantity_remaining_mt),
+  total_buyer_commission: toNumber(deal.total_buyer_commission),
+  total_seller_commission: toNumber(deal.total_seller_commission),
+  commission_received: toNumber(deal.commission_received),
+});
 
-  commodity_id: number | null;
-  total_quantity_mt: string;
-  unit: string;
-  commercial_rate: string;
+export const getCommissionDeals = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/deals/${query}`);
+  const data = response.data;
 
-  seller_party_id: number | null;
-  seller_rate_per_mt: string;
+  if (Array.isArray(data)) {
+    return data.map(normalizeDeal);
+  }
 
-  principal_buyer_party_id: number | null;
-  buyer_rate_per_mt: string;
+  if (Array.isArray(data?.results)) {
+    return {
+      ...data,
+      results: data.results.map(normalizeDeal),
+    };
+  }
 
-  commission_applicable: boolean;
-  commission_basis: 'per_mt' | 'percentage' | 'fixed';
-  commission_payer: 'buyer' | 'seller' | 'both';
-  buyer_side_commission_rate: string;
-  seller_side_commission_rate: string;
+  return data ? normalizeDeal(data) : data;
+};
 
-  terms: string;
-  remarks: string;
-  status: 'open' | 'partially_executed' | 'closed';
+export const getCommissionDeal = async (id: number | string) => {
+  const response = await apiClient.get(`/commission/deals/${id}/`);
+  const data = response.data;
+  return data ? normalizeDeal(data) : data;
+};
 
-  receivers: CommissionDealReceiverRow[];
-}
+export const createCommissionDeal = async (payload: CommissionDealFormData) => {
+  const response = await apiClient.post('/commission/deals/', payload);
+  const data = response.data;
+  return data ? normalizeDeal(data) : data;
+};
 
-export interface CommissionDealDetail extends CommissionDealFormData {
-  id: number;
-  commodity_name?: string;
-  seller_name?: string;
-  principal_buyer_name?: string;
-  quantity_lifted_mt: string;
-  quantity_remaining_mt: string;
-  total_buyer_commission: string;
-  total_seller_commission: string;
-  commission_received: string;
-  commission_outstanding: string;
-  liftings: CommissionLiftingMini[];
-}
+export const updateCommissionDeal = async (
+  id: number | string,
+  payload: Partial<CommissionDealFormData>
+) => {
+  const response = await apiClient.patch(`/commission/deals/${id}/`, payload);
+  const data = response.data;
+  return data ? normalizeDeal(data) : data;
+};
+
+export const deleteCommissionDeal = async (id: number | string) => {
+  const response = await apiClient.delete(`/commission/deals/${id}/`);
+  return response.data;
+};
+
+// Dispatch/Lifting APIs
+export const getCommissionDispatches = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/liftings/${query}`);
+  return response.data;
+};
+
+export const getCommissionDispatch = async (id: number | string) => {
+  const response = await apiClient.get(`/commission/liftings/${id}/`);
+  return response.data;
+};
+
+export const createCommissionDispatch = async (payload: any) => {
+  const response = await apiClient.post('/commission/liftings/', payload);
+  return response.data;
+};
+
+export const updateCommissionDispatch = async (
+  id: number | string,
+  payload: Partial<any>
+) => {
+  const response = await apiClient.patch(`/commission/liftings/${id}/`, payload);
+  return response.data;
+};
+
+export const deleteCommissionDispatch = async (id: number | string) => {
+  const response = await apiClient.delete(`/commission/liftings/${id}/`);
+  return response.data;
+};
+
+// Dashboard API
+export const getCommissionDashboardSummary = async () => {
+  const response = await apiClient.get('/commission/dashboard/summary/');
+  return response.data;
+};
+
+// Extended Commission APIs
+export const getDispatches = async (params?: URLSearchParams) => {
+  return getCommissionDispatches(params);
+};
+
+export const generateInvoiceFromDispatch = async (id: number | string, payload: any) => {
+  const response = await apiClient.post(`/commission/liftings/${id}/generate_invoice/`, payload);
+  return response.data;
+};
+
+export const getCommissionRegister = async (params?: URLSearchParams) => {
+  const dispatches = await getCommissionDispatches(params);
+  const items = dispatches.results || dispatches;
+
+  return items.map((dispatch: any) => ({
+    ...dispatch,
+    dispatch_id: dispatch.lifting_id,
+    buyer_code: dispatch.principal_buyer_code || dispatch.principal_buyer,
+    buyer_name: dispatch.principal_buyer_name,
+    seller_code:
+      dispatch.invoice_party_code || dispatch.receiver_party_code || dispatch.payment_party,
+    seller_name: dispatch.receiver_name || dispatch.invoice_party_name || '',
+    buyer_commission_status: dispatch.payment_status === 'paid' ? 'received' : 'pending',
+    seller_commission_status: dispatch.payment_status === 'paid' ? 'received' : 'pending',
+    remarks: dispatch.notes || '',
+  }));
+};
+
+export const getCommissionCollections = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/accounting/payments-received/${query}`);
+  return response.data.results || response.data;
+};
+
+// Report APIs
+export const getDealBalanceReport = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/reports/deal-balance/${query}`);
+  return response.data;
+};
+
+export const getBuyerCommissionStatement = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/reports/buyer-commission/${query}`);
+  return response.data;
+};
+
+export const getSellerCommissionStatement = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/reports/seller-commission/${query}`);
+  return response.data;
+};
+
+export const getCommissionSummaryReport = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/reports/commission-summary/${query}`);
+  return response.data;
+};
+
+export const getDailyDispatchReport = async (params?: URLSearchParams) => {
+  const query = params ? `?${params.toString()}` : '';
+  const response = await apiClient.get(`/commission/reports/daily-dispatch/${query}`);
+  return response.data;
+};
+
+// Action wrappers
+export const closeCommissionDeal = async (id: number | string) => {
+  const response = await apiClient.post(`/commission/deals/${id}/close/`);
+  return response.data;
+};
+
+export const cancelCommissionDeal = async (id: number | string) => {
+  const response = await apiClient.post(`/commission/deals/${id}/cancel/`);
+  return response.data;
+};
+
+export const getDealSheet = async (id: number | string) => {
+  const response = await apiClient.get(`/commission/deals/${id}/deal_sheet/`);
+  const data = response.data;
+  return data ? normalizeDeal(data) : data;
+};
+
+export const getRecentDispatches = async (limit = 5) => {
+  const params = new URLSearchParams();
+  params.append('ordering', '-lifting_date');
+  params.append('page_size', String(limit));
+  const dispatches = await getCommissionDispatches(params);
+  return dispatches.results || dispatches;
+};
+
+export const getOpenDeals = async () => {
+  const response = await apiClient.get('/commission/deals/open_deals/');
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return data.map(normalizeDeal);
+  }
+
+  return data;
+};
+
+export const getPendingLiftings = async () => {
+  const response = await apiClient.get('/commission/liftings/pending_liftings/');
+  return response.data;
+};

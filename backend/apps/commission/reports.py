@@ -24,6 +24,66 @@ class CommissionReportViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     @action(detail=False, methods=['get'])
+    def dashboard_summary(self, request):
+        """Get dashboard summary data"""
+        # Deals in progress
+        deals_in_progress = CommissionDeal.objects.filter(
+            status__in=['open', 'partially_executed']
+        ).count()
+        
+        # Quantity pending
+        quantity_pending = CommissionDeal.objects.filter(
+            status__in=['open', 'partially_executed']
+        ).aggregate(
+            total_pending=Coalesce(Sum('quantity_remaining_mt'), Decimal('0'))
+        )['total_pending'] or Decimal('0')
+        
+        # Recent dispatches (last 7 days)
+        week_ago = timezone.now().date() - timedelta(days=7)
+        recent_dispatches = CommissionLifting.objects.filter(
+            lifting_date__gte=week_ago
+        ).count()
+        
+        # Commission totals
+        commission_totals = CommissionLedgerEntry.objects.aggregate(
+            earned_total=Coalesce(Sum('gross_commission'), Decimal('0')),
+            received_total=Coalesce(Sum('received_amount'), Decimal('0')),
+            pending_total=Coalesce(Sum('outstanding_amount'), Decimal('0')),
+        )
+        
+        # Unpaid shipments
+        unpaid_shipments = CommissionLifting.objects.filter(
+            payment_status__in=['pending', 'partially_paid']
+        ).count()
+        
+        # Third party recoverable and CPR
+        third_party_recoverable = CommissionLedgerEntry.objects.filter(
+            payment_status__in=['outstanding', 'partially_paid']
+        ).exclude(
+            party=F('commission_deal__principal_buyer_party')
+        ).exclude(
+            party=F('commission_deal__seller_party')
+        ).aggregate(
+            total=Coalesce(Sum('outstanding_amount'), Decimal('0'))
+        )['total'] or Decimal('0')
+        
+        cpr_total = CommissionLedgerEntry.objects.aggregate(
+            total_cpr=Coalesce(Sum('cpr_amount'), Decimal('0'))
+        )['total_cpr'] or Decimal('0')
+        
+        return Response({
+            'deals_in_progress_count': deals_in_progress,
+            'quantity_pending_mt': float(quantity_pending),
+            'recent_dispatches_count': recent_dispatches,
+            'commission_earned_total': float(commission_totals['earned_total']),
+            'commission_received_total': float(commission_totals['received_total']),
+            'commission_pending_total': float(commission_totals['pending_total']),
+            'unpaid_shipments_count': unpaid_shipments,
+            'third_party_recoverable_total': float(third_party_recoverable),
+            'cpr_total': float(cpr_total),
+        })
+    
+    @action(detail=False, methods=['get'])
     def deal_balance_report(self, request):
         """
         Get balance of all commission deals

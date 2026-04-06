@@ -1,13 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useModuleAccess } from '@/lib/hooks/useModuleAccess';
-import DealScreen from '../_components/DealScreen';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-export default function NewCommissionDealPage() {
+export default function NewCommissionDispatchPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const hasAccess = useModuleAccess('commission');
@@ -29,14 +29,16 @@ export default function NewCommissionDealPage() {
           Back
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Create New Commission Deal</h1>
+          <h1 className="text-3xl font-bold">Record New Dispatch</h1>
           <p className="text-gray-500">
-            Set up a new commission trading deal with buyer/seller details
+            Create a new lifting/dispatch transaction for a commission deal
           </p>
         </div>
       </div>
 
-      <DealScreen mode="create" />
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <p className="text-gray-500">Dispatch form will be implemented here</p>
+      </div>
     </div>
   );
 }

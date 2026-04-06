@@ -2,7 +2,7 @@
 Commission Engine - Service layer for commission calculation and posting
 """
 from decimal import Decimal
-from django.db import transaction
+from django.db import transaction, models
 from apps.masters.models import CommissionRule
 from .models import CommissionLifting, CommissionDeal
 from datetime import date

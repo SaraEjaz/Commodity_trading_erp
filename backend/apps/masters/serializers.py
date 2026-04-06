@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Party, Warehouse, BankAccount, CommissionRule
 from apps.commodities.models import Commodity
+from .models import UnitOfMeasure
 
 
 class PartySerializer(serializers.ModelSerializer):
@@ -85,3 +86,10 @@ class CommissionRuleSerializer(serializers.ModelSerializer):
     
     def get_is_valid_today(self, obj):
         return obj.is_valid_today()
+
+
+class UnitOfMeasureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnitOfMeasure
+        fields = ['id', 'code', 'name', 'is_active', 'remarks', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

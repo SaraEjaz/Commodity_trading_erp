@@ -6,6 +6,12 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useModuleAccess } from '@/lib/hooks/useModuleAccess';
 import apiClient from '@/lib/api/client';
 import {
+  getCommissionDeals,
+  closeCommissionDeal,
+  cancelCommissionDeal,
+} from '@/lib/api/commission';
+import { useToast } from '@/hooks/use-toast';
+import {
   Card,
   CardContent,
   CardDescription,
@@ -48,15 +54,32 @@ interface CommissionDeal {
   status: string;
 }
 
+const toNumber = (value: unknown, fallback = 0): number => {
+  const num = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const normalizeDeal = (deal: any): CommissionDeal => ({
+  ...deal,
+  total_quantity_mt: toNumber(deal.total_quantity_mt),
+  quantity_lifted_mt: toNumber(deal.quantity_lifted_mt),
+  quantity_remaining_mt: toNumber(deal.quantity_remaining_mt),
+  total_buyer_commission: toNumber(deal.total_buyer_commission),
+  total_seller_commission: toNumber(deal.total_seller_commission),
+  commission_received: toNumber(deal.commission_received),
+});
+
 export default function CommissionDealsPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const hasAccess = useModuleAccess('commission');
 
   const [deals, setDeals] = useState<CommissionDeal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -67,20 +90,26 @@ export default function CommissionDealsPage() {
       router.push('/dashboard');
       return;
     }
-    fetchDeals();
+    fetchDeals(searchTerm, statusFilter);
   }, [isAuthenticated, hasAccess]);
 
-  const fetchDeals = async () => {
+  const fetchDeals = async (
+    currentSearch = searchTerm,
+    currentStatus = statusFilter
+  ) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await apiClient.get(`/commission/deals/?${params}`);
-      setDeals(response.data.results || response.data);
-    } catch (error) {
+      if (currentSearch) params.append('search', currentSearch);
+      if (currentStatus !== 'all') params.append('status', currentStatus);
+
+      const response = await getCommissionDeals(params);
+      const rawDeals = response.results || response || [];
+      setDeals(rawDeals.map(normalizeDeal));
+    } catch (error: any) {
       console.error('Failed to fetch deals:', error);
+      toast?.error?.('Failed to load deals');
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +127,31 @@ export default function CommissionDealsPage() {
     if (!confirm('Are you sure you want to delete this deal?')) return;
     try {
       await apiClient.delete(`/commission/deals/${id}/`);
-      fetchDeals();
+      fetchDeals(searchTerm, statusFilter);
     } catch (error) {
       console.error('Failed to delete deal:', error);
+    }
+  };
+
+  const handleCloseDeal = async (id: number) => {
+    if (!confirm('Close this deal? This will set status to closed.')) return;
+    try {
+      await closeCommissionDeal(id);
+      toast?.success?.('Deal closed');
+      fetchDeals(searchTerm, statusFilter);
+    } catch (error: any) {
+      toast?.error?.(error?.response?.data?.detail || 'Failed to close deal');
+    }
+  };
+
+  const handleCancelDeal = async (id: number) => {
+    if (!confirm('Cancel this deal? This action cannot be easily undone.')) return;
+    try {
+      await cancelCommissionDeal(id);
+      toast?.success?.('Deal cancelled');
+      fetchDeals(searchTerm, statusFilter);
+    } catch (error: any) {
+      toast?.error?.(error?.response?.data?.detail || 'Failed to cancel deal');
     }
   };
 
@@ -146,20 +197,22 @@ export default function CommissionDealsPage() {
           <CardDescription>Commission deals with lifting and settlement tracking</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
           <div className="flex gap-4 mb-6">
             <Input
               placeholder="Search by Deal ID or party..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyUp={fetchDeals}
+              onKeyUp={(e) => {
+                const value = (e.target as HTMLInputElement).value;
+                fetchDeals(value, statusFilter);
+              }}
               className="flex-1"
             />
             <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value);
-                fetchDeals();
+                fetchDeals(searchTerm, value);
               }}
             >
               <SelectTrigger className="w-[200px]">
@@ -174,12 +227,11 @@ export default function CommissionDealsPage() {
                 <SelectItem value="suspended">Suspended</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={fetchDeals} variant="outline">
+            <Button onClick={() => fetchDeals(searchTerm, statusFilter)} variant="outline">
               Search
             </Button>
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto">
             {deals.length === 0 ? (
               <div className="text-center py-12">
@@ -216,17 +268,18 @@ export default function CommissionDealsPage() {
                       <TableCell>{deal.seller_name || '-'}</TableCell>
                       <TableCell>{deal.principal_buyer_name || '-'}</TableCell>
                       <TableCell className="text-right">
-                        {deal.total_quantity_mt.toFixed(2)}
+                        {toNumber(deal.total_quantity_mt).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {deal.quantity_lifted_mt.toFixed(2)}
+                        {toNumber(deal.quantity_lifted_mt).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {deal.quantity_remaining_mt.toFixed(2)}
+                        {toNumber(deal.quantity_remaining_mt).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         {(
-                          deal.total_buyer_commission + deal.total_seller_commission
+                          toNumber(deal.total_buyer_commission) +
+                          toNumber(deal.total_seller_commission)
                         ).toFixed(2)}
                       </TableCell>
                       <TableCell>
@@ -249,6 +302,23 @@ export default function CommissionDealsPage() {
                             onClick={() => handleEditDeal(deal.id)}
                           >
                             <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleCloseDeal(deal.id)}
+                            title="Close Deal"
+                          >
+                            Close
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleCancelDeal(deal.id)}
+                            title="Cancel Deal"
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Cancel
                           </Button>
                           <Button
                             size="sm"
